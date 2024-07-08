@@ -235,6 +235,7 @@ export default {
       checkedValue: this.value,
       inputHover: false,
       inputValue: null,
+      lastInputValue: null, // Last effective inputValue
       presentText: null,
       presentTags: [],
       checkedNodes: [],
@@ -328,7 +329,18 @@ export default {
     },
     options: {
       handler: function() {
-        this.$nextTick(this.computePresentContent);
+        this.$nextTick(() => {
+          this.computePresentContent()
+
+          if(this.filtering) {
+            this.suggestions = this.panel.getFlattedNodes(this.leafOnly)
+            .filter(node => {
+              if (node.isDisabled) return false;
+              node.text = node.getText(this.showAllLevels, this.separator) || '';
+              return filterMethod(node, this.lastInputValue);
+            });
+          }
+      });
       },
       deep: true
     },
@@ -342,6 +354,11 @@ export default {
     },
     filtering(val) {
       this.$nextTick(this.updatePopper);
+    },
+    inputValue(newVal, oldVal) {
+      const oldValue = oldVal && oldVal !== ' ' ? oldVal : this.lastInputValue
+      const newValue = newVal && newVal !== ' ' ? newVal : false
+      this.lastInputValue = newValue || oldValue || ' '
     }
   },
 
